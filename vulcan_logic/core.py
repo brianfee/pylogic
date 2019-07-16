@@ -4,7 +4,7 @@ class Logic:
     """ A logic string container. """
 
     def __init__(self, logic=None):
-        """ LogicFrame class initialization. """
+        """ Logic class initialization. """
         self.logic_matrix = self.set_logic_matrix(logic)
 
 
@@ -48,3 +48,34 @@ class Logic:
                 eq_dict['right'] = equation[right_start:].strip()
                 break
         return eq_dict
+
+
+
+    def to_eval_string(self):
+        """ Converts the logic matrix into a string for eval(). """
+
+        eval_string = None if not self.logic_matrix else ''
+
+        for i, row in enumerate(self.logic_matrix):
+            if i > 0:
+                eval_string += ' and '
+
+            if row['eval'] in ['==', '>=', '<=', '>', '<', '!=']:
+                eval_string += (row['left'] + ' ' +
+                                row['eval'] + ' ' +
+                                row['right'])
+
+            elif row['eval'] == '=':
+                eval_string += (row['left'] + ' == ' +
+                                row['right'])
+
+            elif row['eval'] in ['~', '~=']:
+                eval_string += ("'" + row['right'] + "'" + ' in ' +
+                                "'" + row['left'] + "'")
+
+            elif row['eval'] in '<>':
+                eval_string += (row['left'] + ' != ' +
+                                row['right'])
+
+
+        return eval_string
