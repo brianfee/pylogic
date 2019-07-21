@@ -1,14 +1,17 @@
 """ The vulcan-logic core. """
 
+import copy
+
 class Logic:
     """ A logic string container. """
 
-    def __init__(self, logic=None, weight=None):
+    def __init__(self, logic_str=None, weight=None):
         """ Logic class initialization. """
+        self.__logic_str = logic_str
         self.__logic_matrix = None
         self.__weight = None
 
-        self.logic = logic
+        self.logic = logic_str
         self.weight = weight
 
 
@@ -120,3 +123,14 @@ class Logic:
 
 
         return eval_string
+
+
+
+    def replace_variables(self, dictionary):
+        logic = copy.deepcopy(self.__logic_matrix)
+        for row in logic:
+            for k, v in dictionary.items():
+                if(row['left'] == k):
+                    row['left'] = v
+
+        return logic
