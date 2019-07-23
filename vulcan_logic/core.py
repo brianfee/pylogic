@@ -15,6 +15,7 @@ class Logic:
         self.weight = weight
 
 
+
     def __repr__(self):
         return self.to_eval_string()
 
@@ -31,19 +32,6 @@ class Logic:
 
 
 
-    @property
-    def weight(self):
-        """ Gets or sets the weight of the Logic String. """
-        return self.__weight
-
-
-
-    @weight.setter
-    def weight(self, weight):
-        return self._set_weight(weight)
-
-
-
     def _set_weight(self, weight=None):
         """ Calculates the weight of the Logic string.
 
@@ -56,7 +44,20 @@ class Logic:
 
 
 
-    @property
+    @property # weight(self)
+    def weight(self):
+        """ Gets or sets the weight of the Logic String. """
+        return self.__weight
+
+
+
+    @weight.setter
+    def weight(self, weight):
+        return self._set_weight(weight)
+
+
+
+    @property # logic(self)
     def logic(self):
         """ Gets or sets the weight of the Logic String. """
         return self.__logic_matrix
@@ -76,7 +77,23 @@ class Logic:
 
 
 
-    @staticmethod
+    def replace_variables(self, dictionary):
+        """ Replaces variables within an equation with values from a dict. """
+
+        logic = copy.deepcopy(self.__logic_matrix)
+        for row in logic:
+            for k, v in dictionary.items():
+                if(row['left'] == k):
+                    row['left'] = v
+
+                if(row['right'] == k):
+                    row['right'] = v
+
+        return logic
+
+
+
+    @staticmethod # split_equation(equation)
     def split_equation(equation):
         """ Splits an equation into a dict of its parts. """
 
@@ -124,13 +141,3 @@ class Logic:
 
         return eval_string
 
-
-
-    def replace_variables(self, dictionary):
-        logic = copy.deepcopy(self.__logic_matrix)
-        for row in logic:
-            for k, v in dictionary.items():
-                if(row['left'] == k):
-                    row['left'] = v
-
-        return logic
