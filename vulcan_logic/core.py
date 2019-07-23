@@ -7,6 +7,11 @@ class Logic:
 
     def __init__(self, logic_str=None, weight=None):
         """ Logic class initialization. """
+
+        self.__evaluators = ['==', '!=', '<>',
+                             '>=', '<=', '~=',
+                             '>', '<', '~', '=']
+
         self.__logic_str = logic_str
         self.__logic_matrix = None
         self.__weight = None
@@ -77,30 +82,76 @@ class Logic:
 
 
 
+    def eval(self, dictionary=None):
+        """ Evaluates logic equations.
+
+        Accepts a dictionary as an argument. If no dictionary is
+        provided, logic equations are evaluated at without any
+        replacement.
+        """
+
+        if dictionary is not None:
+            logic = self.replace_variables(dictionary)
+        else:
+            logic = self.__logic_matrix
+
+        for row in logic:
+            row['validity'] = False
+
+            if row['eval'] == '==' and row['left'] == row['right']:
+                row['validity'] = True
+
+            elif row['eval'] == '!=' and row['left'] != row['right']:
+                row['validity'] = True
+
+            elif row['eval'] == 'in' and row['left'] in row['right']:
+                row['validity'] = True
+
+            elif row['eval'] == '>=' and row['left'] >= row['right']:
+                row['validity'] = True
+
+            elif row['eval'] == '<=' and row['left'] <= row['right']:
+                row['validity'] = True
+
+            elif row['eval'] == '>' and row['left'] > row['right']:
+                row['validity'] = True
+
+            elif row['eval'] == '<' and row['left'] < row['right']:
+                row['validity'] = True
+
+            else:
+                row['validity'] = None
+
+        for row in logic:
+            if not row['validity'] or row['validity'] is None:
+                return False
+
+        return True
+
+
+
     def replace_variables(self, dictionary):
         """ Replaces variables within an equation with values from a dict. """
 
         logic = copy.deepcopy(self.__logic_matrix)
         for row in logic:
-            for k, v in dictionary.items():
-                if(row['left'] == k):
-                    row['left'] = v
+            for key, value in dictionary.items():
+                if row['left'] == key:
+                    row['left'] = value
 
-                if(row['right'] == k):
-                    row['right'] = v
+                if row['right'] == key:
+                    row['right'] = value
 
         return logic
 
 
 
-    @staticmethod # split_equation(equation)
-    def split_equation(equation):
+    def split_equation(self, equation):
         """ Splits an equation into a dict of its parts. """
 
         eq_dict = {'eval': None, 'left': None, 'right': None}
-        evaluators = ['==', '!=', '<>', '>=', '<=', '~=', '>', '<', '~', '=']
 
-        for evaluator in evaluators:
+        for evaluator in self.__evaluators:
             if evaluator in equation:
                 left_end = equation.find(evaluator)
                 right_start = left_end + len(evaluator)
@@ -108,6 +159,19 @@ class Logic:
                 eq_dict['left'] = equation[:left_end].strip()
                 eq_dict['right'] = equation[right_start:].strip()
                 break
+
+        if eq_dict['eval'] == '<>':
+            eq_dict['eval'] = '!='
+
+        elif eq_dict['eval'] in ['~=', '~']:
+            eq_dict['eval'] = 'in'
+            old_left = eq_dict['left']
+            eq_dict['left'] = eq_dict['right']
+            eq_dict['right'] = old_left
+
+        elif eq_dict['eval'] == '=':
+            eq_dict['eval'] = '=='
+
         return eq_dict
 
 
@@ -121,23 +185,8 @@ class Logic:
             if i > 0:
                 eval_string += ' and '
 
-            if row['eval'] in ['==', '>=', '<=', '>', '<', '!=']:
-                eval_string += (row['left'] + ' ' +
-                                row['eval'] + ' ' +
-                                row['right'])
-
-            elif row['eval'] == '=':
-                eval_string += (row['left'] + ' == ' +
-                                row['right'])
-
-            elif row['eval'] in ['~', '~=']:
-                eval_string += ("'" + row['right'] + "'" + ' in ' +
-                                "'" + row['left'] + "'")
-
-            elif row['eval'] in '<>':
-                eval_string += (row['left'] + ' != ' +
-                                row['right'])
-
+            eval_string += (row['left'] + ' ' +
+                            row['eval'] + ' ' +
+                            row['right'])
 
         return eval_string
-
