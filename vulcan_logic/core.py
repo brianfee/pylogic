@@ -1,5 +1,6 @@
 """ The vulcan-logic core. """
 
+import ast
 import copy
 
 class Logic:
@@ -82,6 +83,20 @@ class Logic:
 
 
 
+    @staticmethod # astype(var, conv_type)
+    def astype(var, conv_type):
+        """ Converts a variable to a given type. """
+
+        if isinstance(conv_type, type):
+            try:
+                return ast.literal_eval(str(conv_type(var)))
+            except (ValueError, TypeError) as err:
+                print(err)
+
+        return None
+
+
+
     def eval(self, dictionary=None):
         """ Evaluates logic equations.
 
@@ -96,6 +111,9 @@ class Logic:
             logic = self.__logic_matrix
 
         for row in logic:
+            if not isinstance(row['right'], type(row['left'])):
+                row['right'] = self.astype(row['right'], type(row['left']))
+
             row['validity'] = False
 
             if row['eval'] == '==' and row['left'] == row['right']:
