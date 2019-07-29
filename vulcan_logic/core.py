@@ -6,16 +6,20 @@ import copy
 class Logic:
     """ A logic string container. """
 
-    def __init__(self, logic_str=None, weight=None):
+    def __init__(self, logic_str=None, weight=None, evaluators=None):
         """ Logic class initialization. """
 
-        self.__evaluators = ['==', '!=', '<>',
-                             '>=', '<=', '~=',
-                             '>', '<', '~', '=']
+        self.__evaluators = {'==': '{0} == {1}',
+                             '!=': '{0} != {1}',
+                             '>=': '{0} >= {1}',
+                             '<=': '{0} <= {1}',
+                             '>': '{0} > {1}',
+                             '<': '{0} < {1}'}
 
         self.__logic_str = logic_str
         self.__logic_matrix = None
         self.__weight = None
+        self.__evaluators.update(evaluators)
 
         self.logic = logic_str
         self.weight = weight
@@ -168,14 +172,26 @@ class Logic:
         """ Splits an equation into a dict of its parts. """
 
         eq_dict = {'eval': None, 'left': None, 'right': None}
-
+        max_eval_length = 0
         for evaluator in self.__evaluators:
-            if evaluator in equation:
-                left_end = equation.find(evaluator)
-                right_start = left_end + len(evaluator)
-                eq_dict['eval'] = evaluator
-                eq_dict['left'] = equation[:left_end].strip()
-                eq_dict['right'] = equation[right_start:].strip()
+            max_eval_length = max(len(evaluator), max_eval_length)
+
+        for i in range(max_eval_length, 0, -1):
+            for evaluator in self.__evaluators:
+                if len(evaluator) != i:
+                    continue
+
+                if evaluator in equation:
+                    print(equation)
+                    print('Matched:', evaluator)
+                    left_end = equation.find(evaluator)
+                    right_start = left_end + len(evaluator)
+                    eq_dict['eval'] = evaluator
+                    eq_dict['left'] = equation[:left_end].strip()
+                    eq_dict['right'] = equation[right_start:].strip()
+                    break
+
+            if eq_dict['eval'] is not None:
                 break
 
         if eq_dict['eval'] == '<>':
