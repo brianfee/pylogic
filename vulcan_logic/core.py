@@ -105,7 +105,7 @@ class Logic:
         """ Evaluates logic equations.
 
         Accepts a dictionary as an argument. If no dictionary is
-        provided, logic equations are evaluated at without any
+        provided, logic equations are evaluated without any
         replacement.
         """
 
@@ -118,31 +118,16 @@ class Logic:
             if not isinstance(row['right'], type(row['left'])):
                 row['right'] = self.astype(row['right'], type(row['left']))
 
-            row['validity'] = False
+            left = str(type(row['left'])) + '(' + str(row['left']) + ')'
+            right = str(type(row['right'])) + '(' + str(row['right']) + ')'
 
-            if row['eval'] == '==' and row['left'] == row['right']:
-                row['validity'] = True
+            row['validity'] = None
 
-            elif row['eval'] == '!=' and row['left'] != row['right']:
-                row['validity'] = True
+            eval_string = self.__evaluators[row['eval']]
+            eval_string = eval_string.replace('{0}', left)
+            eval_string = eval_string.replace('{1}', right)
+            row['validity'] = ast.literal_eval(repr(eval_string))
 
-            elif row['eval'] == 'in' and row['left'] in row['right']:
-                row['validity'] = True
-
-            elif row['eval'] == '>=' and row['left'] >= row['right']:
-                row['validity'] = True
-
-            elif row['eval'] == '<=' and row['left'] <= row['right']:
-                row['validity'] = True
-
-            elif row['eval'] == '>' and row['left'] > row['right']:
-                row['validity'] = True
-
-            elif row['eval'] == '<' and row['left'] < row['right']:
-                row['validity'] = True
-
-            else:
-                row['validity'] = None
 
         for row in logic:
             if not row['validity'] or row['validity'] is None:
@@ -172,6 +157,7 @@ class Logic:
         """ Splits an equation into a dict of its parts. """
 
         eq_dict = {'eval': None, 'left': None, 'right': None}
+
         max_eval_length = 0
         for evaluator in self.__evaluators:
             max_eval_length = max(len(evaluator), max_eval_length)
@@ -182,8 +168,6 @@ class Logic:
                     continue
 
                 if evaluator in equation:
-                    print(equation)
-                    print('Matched:', evaluator)
                     left_end = equation.find(evaluator)
                     right_start = left_end + len(evaluator)
                     eq_dict['eval'] = evaluator
@@ -194,17 +178,6 @@ class Logic:
             if eq_dict['eval'] is not None:
                 break
 
-        if eq_dict['eval'] == '<>':
-            eq_dict['eval'] = '!='
-
-        elif eq_dict['eval'] in ['~=', '~']:
-            eq_dict['eval'] = 'in'
-            old_left = eq_dict['left']
-            eq_dict['left'] = eq_dict['right']
-            eq_dict['right'] = old_left
-
-        elif eq_dict['eval'] == '=':
-            eq_dict['eval'] = '=='
 
         return eq_dict
 
@@ -219,8 +192,10 @@ class Logic:
             if i > 0:
                 eval_string += ' and '
 
-            eval_string += (row['left'] + ' ' +
-                            row['eval'] + ' ' +
-                            row['right'])
+            substring = self.__evaluators[row['eval']]
+            substring = substring.replace('{0}', row['left'])
+            substring = substring.replace('{1}', row['right'])
+
+            eval_string += substring
 
         return eval_string
