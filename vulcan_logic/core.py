@@ -27,7 +27,10 @@ class Logic:
 
 
     def __repr__(self):
-        return self.to_eval_string()
+        eval_string = ""
+        for row in self.__evaluators:
+            eval_string += self.to_eval_string(row) + ' and '
+        return None if eval_string == "" else eval_string[:-5]
 
 
 
@@ -91,6 +94,11 @@ class Logic:
     def astype(var, conv_type):
         """ Converts a variable to a given type. """
 
+        # If variable is already of conv_type, return immediately
+        if isinstance(var, conv_type):
+            return var
+
+        # Check that conv_type is actually a type.
         if isinstance(conv_type, type):
             try:
                 return ast.literal_eval(str(conv_type(var)))
@@ -115,17 +123,9 @@ class Logic:
             logic = self.__logic_matrix
 
         for row in logic:
-            if not isinstance(row['right'], type(row['left'])):
-                row['right'] = self.astype(row['right'], type(row['left']))
-
-            left = str(type(row['left'])) + '(' + str(row['left']) + ')'
-            right = str(type(row['right'])) + '(' + str(row['right']) + ')'
-
             row['validity'] = None
 
-            eval_string = self.__evaluators[row['eval']]
-            eval_string = eval_string.replace('{0}', left)
-            eval_string = eval_string.replace('{1}', right)
+            eval_string = self.to_eval_string(row)
             row['validity'] = ast.literal_eval(repr(eval_string))
 
 
@@ -182,20 +182,18 @@ class Logic:
         return eq_dict
 
 
+    def to_eval_string(self, eq_dict):
+        """ Takes an equation dictionary and returns a string for eval(). """
 
-    def to_eval_string(self):
-        """ Converts the logic matrix into a string for eval(). """
+        # Match right type to left type
+        right = self.astype(eq_dict['right'], type(eq_dict['left']))
 
-        eval_string = None if not self.__logic_matrix else ''
+        # Change left/right sides of equation into typed strings for eval().
+        left = str(type(eq_dict['left'])) + '(' + str(eq_dict['left']) + ')'
+        right = str(type(right)) + '(' + str(right) + ')'
 
-        for i, row in enumerate(self.__logic_matrix):
-            if i > 0:
-                eval_string += ' and '
-
-            substring = self.__evaluators[row['eval']]
-            substring = substring.replace('{0}', row['left'])
-            substring = substring.replace('{1}', row['right'])
-
-            eval_string += substring
+        eval_string = self.__evaluators[eq_dict['eval']]
+        eval_string = eval_string.replace('{0}', left)
+        eval_string = eval_string.replace('{1}', right)
 
         return eval_string
