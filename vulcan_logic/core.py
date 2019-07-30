@@ -28,8 +28,12 @@ class Logic:
 
     def __repr__(self):
         eval_string = ""
-        for row in self.__evaluators:
-            eval_string += self.to_eval_string(row) + ' and '
+        for row in self.__logic_matrix:
+            tmp = self.__evaluators[row['eval']]
+            tmp = tmp.replace('{0}', row['left'])
+            tmp = tmp.replace('{1}', row['right'])
+
+            eval_string += tmp + ' and '
         return None if eval_string == "" else eval_string[:-5]
 
 
