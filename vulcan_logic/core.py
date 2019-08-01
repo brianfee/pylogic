@@ -162,26 +162,15 @@ class Logic:
 
         eq_dict = {'eval': None, 'left': None, 'right': None}
 
-        max_eval_length = 0
-        for evaluator in self.__evaluators:
-            max_eval_length = max(len(evaluator), max_eval_length)
-
-        for i in range(max_eval_length, 0, -1):
-            for evaluator in self.__evaluators:
-                if len(evaluator) != i:
-                    continue
-
-                if evaluator in equation:
-                    left_end = equation.find(evaluator)
-                    right_start = left_end + len(evaluator)
-                    eq_dict['eval'] = evaluator
-                    eq_dict['left'] = equation[:left_end].strip()
-                    eq_dict['right'] = equation[right_start:].strip()
-                    break
-
-            if eq_dict['eval'] is not None:
+        # Evaluators must be sorted so that longer strings match first.
+        for evaluator in sorted(self.__evaluators, key=len, reverse=True):
+            if evaluator in equation:
+                left_end = equation.find(evaluator)
+                right_start = left_end + len(evaluator)
+                eq_dict['eval'] = evaluator
+                eq_dict['left'] = equation[:left_end].strip()
+                eq_dict['right'] = equation[right_start:].strip()
                 break
-
 
         return eq_dict
 
