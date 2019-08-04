@@ -57,7 +57,16 @@ class Logic:
         to contribute varying weights.
         """
 
-        self.__weight = len(self.__logic_matrix) if weight is None else weight
+        for row in self.__logic_matrix:
+            try:
+                row['weight']
+            except KeyError:
+                row['weight'] = 1
+
+        if weight is None:
+            self.__weight = sum(row['weight'] for row in self.__logic_matrix)
+        else:
+            self.__weight = weight
 
 
 
@@ -154,6 +163,19 @@ class Logic:
                     row['right'] = value
 
         return logic
+
+
+
+    def rebase_weight(self, dictionary=None):
+        """ Base weights on a dictionary of values. """
+
+        if dictionary is not None:
+            for row in self.__logic_matrix:
+                for match_str, adj_weight in dictionary.items():
+                    if match_str in row.values():
+                        row['weight'] = adj_weight
+
+            self.weight = sum(row['weight'] for row in self.__logic_matrix)
 
 
 
