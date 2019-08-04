@@ -58,7 +58,10 @@ class Logic:
         """
 
         for row in self.__logic_matrix:
-            row['weight'] = 1
+            try:
+                row['weight']
+            except KeyError:
+                row['weight'] = 1
 
         if weight is None:
             self.__weight = sum(row['weight'] for row in self.__logic_matrix)
