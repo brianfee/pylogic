@@ -1,3 +1,2 @@
-# Pylor
-Pylor: A PYthon Logic handleR
+# pylogic
 A library for parsing logic strings and determining validity against a dataset.
