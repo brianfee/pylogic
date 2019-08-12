@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def logic_test():
     """ Main testing function. """
-    from pylor import Logic
+    from pylogic import Logic
 
     logic_str = 'Make == Subaru, Model != Impreza, Color ~= Blue, MPG > 30'
     addtl_evals = {'~=': '{1} in {0}'}
