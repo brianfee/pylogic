@@ -137,10 +137,7 @@ class Logic:
 
         for row in logic:
             eval_string = self.to_eval_string(row)
-            row['validity'] = eval(eval_string)
-            print('String:', repr(eval_string))
-            print('Validity:', row['validity'])
-
+            row['validity'] = eval(eval_string) #pylint: disable=eval-used
 
         for row in logic:
             if not row['validity'] or row['validity'] is None:
@@ -198,14 +195,6 @@ class Logic:
 
 
 
-    @staticmethod
-    def type_parser(t):
-        """ Returns simplified string of class text. """
-
-        return str(t)[8:-2]
-
-
-
     def to_eval_string(self, eq_dict):
         """ Takes an equation dictionary and returns a string for eval(). """
 
@@ -213,11 +202,24 @@ class Logic:
         right = self.astype(eq_dict['right'], type(eq_dict['left']))
 
         # Change left/right sides of equation into typed strings for eval().
-        left = self.type_parser(type(right)) + '("' + str(eq_dict['left']) + '")'
-        right = self.type_parser(type(right)) + '("' + str(right) + '")'
+        left = type_parser(right) + '("' + str(eq_dict['left']) + '")'
+        right = type_parser(right) + '("' + str(right) + '")'
 
         eval_string = self.__evaluators[eq_dict['eval']]
         eval_string = eval_string.replace('{0}', left)
         eval_string = eval_string.replace('{1}', right)
 
         return eval_string
+
+
+def type_parser(var):
+    """ Returns string representation of variable type.
+
+    If passed a variable with class: 'type', this function will return a
+    shortened string. Otherwise, it finds the type of the variable, and
+    returns the shortened string of that type.
+    """
+
+    if isinstance(var, type):
+        return str(var)[8:-2]
+    return str(type(var))[8:-2]
