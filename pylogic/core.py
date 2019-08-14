@@ -136,10 +136,10 @@ class Logic:
             logic = self.__logic_matrix
 
         for row in logic:
-            row['validity'] = None
-
             eval_string = self.to_eval_string(row)
-            row['validity'] = ast.literal_eval(repr(eval_string))
+            row['validity'] = eval(eval_string)
+            print('String:', repr(eval_string))
+            print('Validity:', row['validity'])
 
 
         for row in logic:
@@ -197,6 +197,15 @@ class Logic:
         return eq_dict
 
 
+
+    @staticmethod
+    def type_parser(t):
+        """ Returns simplified string of class text. """
+
+        return str(t)[8:-2]
+
+
+
     def to_eval_string(self, eq_dict):
         """ Takes an equation dictionary and returns a string for eval(). """
 
@@ -204,8 +213,8 @@ class Logic:
         right = self.astype(eq_dict['right'], type(eq_dict['left']))
 
         # Change left/right sides of equation into typed strings for eval().
-        left = str(type(eq_dict['left'])) + '(' + str(eq_dict['left']) + ')'
-        right = str(type(right)) + '(' + str(right) + ')'
+        left = self.type_parser(type(right)) + '("' + str(eq_dict['left']) + '")'
+        right = self.type_parser(type(right)) + '("' + str(right) + '")'
 
         eval_string = self.__evaluators[eq_dict['eval']]
         eval_string = eval_string.replace('{0}', left)
