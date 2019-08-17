@@ -1,4 +1,4 @@
-""" The vulcan-logic core. """
+""" The pylogic core. """
 
 import ast
 import copy
