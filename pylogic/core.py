@@ -1,6 +1,5 @@
 """ The pylogic core. """
 
-import ast
 import copy
 
 class Logic:
@@ -108,13 +107,13 @@ class Logic:
         """ Converts a variable to a given type. """
 
         # If variable is already of conv_type, return immediately
-        if isinstance(var, conv_type):
+        if isinstance(var, conv_type) or var is None:
             return var
 
         # Check that conv_type is actually a type.
         if isinstance(conv_type, type):
             try:
-                return ast.literal_eval(str(conv_type(var)))
+                return conv_type(var)
             except (ValueError, TypeError) as err:
                 print(err)
 
@@ -137,13 +136,23 @@ class Logic:
 
         for row in logic:
             eval_string = self.to_eval_string(row)
-            row['validity'] = eval(eval_string) #pylint: disable=eval-used
+            try:
+                row['validity'] = eval(eval_string) #pylint: disable=eval-used
+            except NameError as err:
+                row['validity'] = eval_string
+
+        validity_str = ""
 
         for row in logic:
-            if not row['validity'] or row['validity'] is None:
-                return False
+            validity_str = validity_str + ' and ' + str(row['validity'])
 
-        return True
+        validity_str = validity_str[5:] # Drop first ' and '
+
+        try:
+            return eval(validity_str) #pylint: disable=eval-used
+        except NameError as err:
+            print(err)
+            raise NameError(validity_str)
 
 
 
@@ -221,5 +230,5 @@ def type_parser(var):
     """
 
     if isinstance(var, type):
-        return str(var)[8:-2]
-    return str(type(var))[8:-2]
+        return str(var)[8:-2].replace('__main__.', '')
+    return str(type(var))[8:-2].replace('__main__.', '')

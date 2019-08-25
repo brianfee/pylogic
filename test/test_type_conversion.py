@@ -54,7 +54,12 @@ def logic_test():
         for key, value in car.items():
             print(str(key) + ': ' + str(value))
         print('Matched: ', end='')
-        print(log.eval(car))
+        try:
+            x = log.eval(car)
+        except NameError as err:
+            x = eval(str(err))
+
+        print('X =', eval(str(x)))
         print()
 
 
