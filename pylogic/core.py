@@ -151,8 +151,7 @@ class Logic:
         try:
             return eval(validity_str) #pylint: disable=eval-used
         except NameError as err:
-            print(err)
-            raise NameError(validity_str)
+            return validity_str
 
 
 
@@ -221,6 +220,7 @@ class Logic:
         return eval_string
 
 
+
 def type_parser(var):
     """ Returns string representation of variable type.
 
@@ -228,6 +228,9 @@ def type_parser(var):
     shortened string. Otherwise, it finds the type of the variable, and
     returns the shortened string of that type.
     """
+
+    if var in [None, type(None)]:
+        return ''
 
     if isinstance(var, type):
         return str(var)[8:-2].replace('__main__.', '')
