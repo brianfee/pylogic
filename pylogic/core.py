@@ -138,7 +138,7 @@ class Logic:
             eval_string = self.to_eval_string(row)
             try:
                 row['validity'] = eval(eval_string) #pylint: disable=eval-used
-            except NameError as err:
+            except NameError:
                 row['validity'] = eval_string
 
         validity_str = ""
@@ -150,7 +150,7 @@ class Logic:
 
         try:
             return eval(validity_str) #pylint: disable=eval-used
-        except NameError as err:
+        except NameError:
             return validity_str
 
 
@@ -235,3 +235,46 @@ def type_parser(var):
     if isinstance(var, type):
         return str(var)[8:-2].replace('__main__.', '')
     return str(type(var))[8:-2].replace('__main__.', '')
+
+
+
+def parse_logic_string(logic_str):
+    """ Parses a logic string into equations and logic operators."""
+
+    # Subsitute commas for "and" statements. (Backwards compatibility)
+    logic_str = '(' + logic_str
+    logic_str += ')'
+    logic_str = logic_str.replace(', ', ') and (')
+    logic_str = logic_str.replace(',', ') and (')
+
+    # Loop over logic string, marking the positions of logical operators.
+    i = 0
+    logic_pos = []
+    while i < len(logic_str):
+        if logic_str[i] in ['(', ')']:
+            logic_pos.append(i)
+        elif logic_str[i - 1:i + 4] == ' and ':
+            for k in range(5):
+                logic_pos.append(i - 1 + k)
+        elif logic_str[i - 1:i + 3] == ' or ':
+            for k in range(4):
+                logic_pos.append(i - 1 + k)
+        i += 1
+
+    # Build a dictionary of equations between logical operators.
+    i = 0
+    logic_counter = 0
+    logic_dict = {}
+    prev_pos = 0
+    for pos in logic_pos:
+        if pos - prev_pos > 1:
+            logic_dict[str(logic_counter)] = logic_str[prev_pos + 1:pos]
+            logic_counter += 1
+
+        prev_pos = pos
+
+    # Substitute equations for dictionary values.
+    for key, value in logic_dict.items():
+        logic_str = logic_str.replace(value, '{' + key + '}')
+
+    return logic_str, logic_dict
