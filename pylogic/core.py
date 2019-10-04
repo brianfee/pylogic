@@ -261,7 +261,7 @@ def parse_logic_string(logic_str):
     while i < len(logic_str):
         if logic_str[i] in ['(', ')']:
             logic_pos.append(i)
-        elif logic_str[i - 1:i + 4] == ' and ':
+        elif logic_str[i - 1:i + 4] in [' and ', ' not ']:
             for k in range(5):
                 logic_pos.append(i - 1 + k)
         elif logic_str[i - 1:i + 3] == ' or ':
