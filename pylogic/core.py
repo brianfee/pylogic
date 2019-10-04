@@ -15,6 +15,8 @@ class Logic:
                              '>': '{0} > {1}',
                              '<': '{0} < {1}'}
 
+        self.__logic_str = None
+        self.__equation_dict = None
         self.__weight = None
         self.evaluators = evaluators
 
@@ -177,19 +179,6 @@ class Logic:
                     equation['right'] = value
 
         return equations
-
-
-
-    def rebase_weight(self, dictionary=None):
-        """ Base weights on a dictionary of values. """
-
-        if dictionary is not None:
-            for row in self.__logic_matrix:
-                for match_str, adj_weight in dictionary.items():
-                    if match_str in row.values():
-                        row['weight'] = adj_weight
-
-            self.weight = sum(row['weight'] for row in self.__logic_matrix)
 
 
 
