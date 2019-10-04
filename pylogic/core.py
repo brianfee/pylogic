@@ -111,6 +111,25 @@ class Logic:
 
 
 
+    @staticmethod # astype(var, conv_type)
+    def astype(var, conv_type):
+        """ Converts a variable to a given type. """
+
+        # If variable is already of conv_type, return immediately
+        if isinstance(var, conv_type) or var is None:
+            return var
+
+        # Check that conv_type is actually a type.
+        if isinstance(conv_type, type):
+            try:
+                return conv_type(var)
+            except (ValueError, TypeError) as err:
+                print(err)
+
+        return None
+
+
+
     def eval(self, dictionary=None):
         """ Evaluates logic equations.
 
@@ -120,24 +139,24 @@ class Logic:
         """
 
         if dictionary is not None:
-            logic = self.replace_variables(dictionary)
+            equations = self.replace_variables(dictionary)
         else:
-            logic = self.__logic_matrix
+            equations = self.__equation_dict
 
-        for row in logic:
-            eval_string = self.to_eval_string(row)
+        for _, equation in equations.items():
+            eval_string = self.to_eval_string(equation)
             try:
-                row['validity'] = eval(eval_string) #pylint: disable=eval-used
+                equation['validity'] = eval(eval_string) #pylint: disable=eval-used
             except NameError:
-                row['validity'] = eval_string
+                equation['validity'] = eval_string
 
-        validity_str = ""
+        validity_str = self.logic
 
-        for row in logic:
-            validity_str = validity_str + ' and ' + str(row['validity'])
+        for key, equation in equations.items():
+            key = '{' + key + '}'
+            validity_str = validity_str.replace(key, str(equation['validity']))
 
-        validity_str = validity_str[5:] # Drop first ' and '
-
+        print(validity_str)
         try:
             return eval(validity_str) #pylint: disable=eval-used
         except NameError:
@@ -148,16 +167,16 @@ class Logic:
     def replace_variables(self, dictionary):
         """ Replaces variables within an equation with values from a dict. """
 
-        logic = copy.deepcopy(self.__logic_matrix)
-        for row in logic:
+        equations = copy.deepcopy(self.__equation_dict)
+        for _, equation in equations.items():
             for key, value in dictionary.items():
-                if row['left'] == key:
-                    row['left'] = value
+                if equation['left'] == key:
+                    equation['left'] = value
 
-                if row['right'] == key:
-                    row['right'] = value
+                if equation['right'] == key:
+                    equation['right'] = value
 
-        return logic
+        return equations
 
 
 
