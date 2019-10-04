@@ -15,10 +15,8 @@ class Logic:
                              '>': '{0} > {1}',
                              '<': '{0} < {1}'}
 
-        self.__logic_str = logic_str
-        self.__logic_matrix = None
         self.__weight = None
-        self.__evaluators.update(evaluators)
+        self.evaluators = evaluators
 
         self.logic = logic_str
         self.weight = weight
@@ -27,7 +25,7 @@ class Logic:
 
     def __repr__(self):
         eval_string = ""
-        for row in self.__logic_matrix:
+        for row in self.__equation_dict:
             tmp = self.__evaluators[row['eval']]
             tmp = tmp.replace('{0}', row['left'])
             tmp = tmp.replace('{1}', row['right'])
@@ -38,13 +36,50 @@ class Logic:
 
 
     def __str__(self):
-        """ Prints the __logic_matrix in a readable format. """
-        print_str = ''
-        for row in self.__logic_matrix:
-            print_str += row['left'] + ' '
-            print_str += row['eval'] + ' '
-            print_str += row['right'] + '\n'
-        return print_str[:-1] # Trim final newline
+        """ Prints the parsed logic string in a readable format. """
+        print_str = self.logic
+        for key, value in self.__equation_dict.items():
+            equation = self.__evaluators[value['eval']]
+            equation = equation.replace('{0}', value['left'])
+            equation = equation.replace('{1}', value['right'])
+            print_str = print_str.replace('{' + key + '}', equation)
+
+        return print_str
+
+
+
+    @property
+    def logic(self):
+        """ Getter method returns parsed logic string. """
+        return self.__logic_str
+
+
+
+    @logic.setter
+    def logic(self, logic_str):
+        """ Creates parsed logic string and equation dictionary. """
+        self.__logic_str, equations = parse_logic_string(logic_str)
+        for key, equation in equations.items():
+            equations[key] = self.split_equation(equation)
+
+        self.__equation_dict = equations
+
+
+
+    @property
+    def evaluators(self):
+        """ Getter method for the evaluators variable. """
+        return self.__evaluators
+
+
+
+    @evaluators.setter
+    def evaluators(self, evals):
+        """ Setter method for the evaluators variable.
+
+        Only adding to or modifiying evaluators in the base set is supported.
+        """
+        self.__evaluators.update(evals)
 
 
 
@@ -56,20 +91,14 @@ class Logic:
         to contribute varying weights.
         """
 
-        for row in self.__logic_matrix:
-            try:
-                row['weight']
-            except KeyError:
-                row['weight'] = 1
-
         if weight is None:
-            self.__weight = sum(row['weight'] for row in self.__logic_matrix)
+            self.__weight = len(self.__equation_dict)
         else:
             self.__weight = weight
 
 
 
-    @property # weight(self)
+    @property
     def weight(self):
         """ Gets or sets the weight of the Logic String. """
         return self.__weight
@@ -79,45 +108,6 @@ class Logic:
     @weight.setter
     def weight(self, weight):
         return self._set_weight(weight)
-
-
-
-    @property # logic(self)
-    def logic(self):
-        """ Gets or sets the weight of the Logic String. """
-        return self.__logic_matrix
-
-
-
-    @logic.setter
-    def logic(self, logic):
-        """ Takes a logic string and expands it into an n x 3 matrix. """
-
-        equations = [equation.strip() for equation in logic.split(',')]
-        equations_matrix = []
-        for equation in equations:
-            equations_matrix.append(self.split_equation(equation))
-
-        self.__logic_matrix = equations_matrix
-
-
-
-    @staticmethod # astype(var, conv_type)
-    def astype(var, conv_type):
-        """ Converts a variable to a given type. """
-
-        # If variable is already of conv_type, return immediately
-        if isinstance(var, conv_type) or var is None:
-            return var
-
-        # Check that conv_type is actually a type.
-        if isinstance(conv_type, type):
-            try:
-                return conv_type(var)
-            except (ValueError, TypeError) as err:
-                print(err)
-
-        return None
 
 
 
@@ -242,8 +232,7 @@ def parse_logic_string(logic_str):
     """ Parses a logic string into equations and logic operators."""
 
     # Subsitute commas for "and" statements. (Backwards compatibility)
-    logic_str = '(' + logic_str
-    logic_str += ')'
+    logic_str = '(' + logic_str + ')'
     logic_str = logic_str.replace(', ', ') and (')
     logic_str = logic_str.replace(',', ') and (')
 
