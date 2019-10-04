@@ -15,10 +15,10 @@ class Logic:
                              '>': '{0} > {1}',
                              '<': '{0} < {1}'}
 
-        self.__logic_str = logic_str
-        self.__logic_matrix = None
+        self.__logic_str = None
+        self.__equation_dict = None
         self.__weight = None
-        self.__evaluators.update(evaluators)
+        self.evaluators = evaluators
 
         self.logic = logic_str
         self.weight = weight
@@ -27,7 +27,7 @@ class Logic:
 
     def __repr__(self):
         eval_string = ""
-        for row in self.__logic_matrix:
+        for row in self.__equation_dict:
             tmp = self.__evaluators[row['eval']]
             tmp = tmp.replace('{0}', row['left'])
             tmp = tmp.replace('{1}', row['right'])
@@ -38,13 +38,50 @@ class Logic:
 
 
     def __str__(self):
-        """ Prints the __logic_matrix in a readable format. """
-        print_str = ''
-        for row in self.__logic_matrix:
-            print_str += row['left'] + ' '
-            print_str += row['eval'] + ' '
-            print_str += row['right'] + '\n'
-        return print_str[:-1] # Trim final newline
+        """ Prints the parsed logic string in a readable format. """
+        print_str = self.logic
+        for key, value in self.__equation_dict.items():
+            equation = self.__evaluators[value['eval']]
+            equation = equation.replace('{0}', value['left'])
+            equation = equation.replace('{1}', value['right'])
+            print_str = print_str.replace('{' + key + '}', equation)
+
+        return print_str
+
+
+
+    @property
+    def logic(self):
+        """ Getter method returns parsed logic string. """
+        return self.__logic_str
+
+
+
+    @logic.setter
+    def logic(self, logic_str):
+        """ Creates parsed logic string and equation dictionary. """
+        self.__logic_str, equations = parse_logic_string(logic_str)
+        for key, equation in equations.items():
+            equations[key] = self.split_equation(equation)
+
+        self.__equation_dict = equations
+
+
+
+    @property
+    def evaluators(self):
+        """ Getter method for the evaluators variable. """
+        return self.__evaluators
+
+
+
+    @evaluators.setter
+    def evaluators(self, evals):
+        """ Setter method for the evaluators variable.
+
+        Only adding to or modifiying evaluators in the base set is supported.
+        """
+        self.__evaluators.update(evals)
 
 
 
@@ -56,20 +93,14 @@ class Logic:
         to contribute varying weights.
         """
 
-        for row in self.__logic_matrix:
-            try:
-                row['weight']
-            except KeyError:
-                row['weight'] = 1
-
         if weight is None:
-            self.__weight = sum(row['weight'] for row in self.__logic_matrix)
+            self.__weight = len(self.__equation_dict)
         else:
             self.__weight = weight
 
 
 
-    @property # weight(self)
+    @property
     def weight(self):
         """ Gets or sets the weight of the Logic String. """
         return self.__weight
@@ -79,26 +110,6 @@ class Logic:
     @weight.setter
     def weight(self, weight):
         return self._set_weight(weight)
-
-
-
-    @property # logic(self)
-    def logic(self):
-        """ Gets or sets the weight of the Logic String. """
-        return self.__logic_matrix
-
-
-
-    @logic.setter
-    def logic(self, logic):
-        """ Takes a logic string and expands it into an n x 3 matrix. """
-
-        equations = [equation.strip() for equation in logic.split(',')]
-        equations_matrix = []
-        for equation in equations:
-            equations_matrix.append(self.split_equation(equation))
-
-        self.__logic_matrix = equations_matrix
 
 
 
@@ -130,27 +141,27 @@ class Logic:
         """
 
         if dictionary is not None:
-            logic = self.replace_variables(dictionary)
+            equations = self.replace_variables(dictionary)
         else:
-            logic = self.__logic_matrix
+            equations = self.__equation_dict
 
-        for row in logic:
-            eval_string = self.to_eval_string(row)
+        for _, equation in equations.items():
+            eval_string = self.to_eval_string(equation)
             try:
-                row['validity'] = eval(eval_string) #pylint: disable=eval-used
-            except NameError as err:
-                row['validity'] = eval_string
+                equation['validity'] = eval(eval_string) #pylint: disable=eval-used
+            except NameError:
+                equation['validity'] = eval_string
 
-        validity_str = ""
+        validity_str = self.logic
 
-        for row in logic:
-            validity_str = validity_str + ' and ' + str(row['validity'])
+        for key, equation in equations.items():
+            key = '{' + key + '}'
+            validity_str = validity_str.replace(key, str(equation['validity']))
 
-        validity_str = validity_str[5:] # Drop first ' and '
-
+        print(validity_str)
         try:
             return eval(validity_str) #pylint: disable=eval-used
-        except NameError as err:
+        except NameError:
             return validity_str
 
 
@@ -158,29 +169,16 @@ class Logic:
     def replace_variables(self, dictionary):
         """ Replaces variables within an equation with values from a dict. """
 
-        logic = copy.deepcopy(self.__logic_matrix)
-        for row in logic:
+        equations = copy.deepcopy(self.__equation_dict)
+        for _, equation in equations.items():
             for key, value in dictionary.items():
-                if row['left'] == key:
-                    row['left'] = value
+                if equation['left'] == key:
+                    equation['left'] = value
 
-                if row['right'] == key:
-                    row['right'] = value
+                if equation['right'] == key:
+                    equation['right'] = value
 
-        return logic
-
-
-
-    def rebase_weight(self, dictionary=None):
-        """ Base weights on a dictionary of values. """
-
-        if dictionary is not None:
-            for row in self.__logic_matrix:
-                for match_str, adj_weight in dictionary.items():
-                    if match_str in row.values():
-                        row['weight'] = adj_weight
-
-            self.weight = sum(row['weight'] for row in self.__logic_matrix)
+        return equations
 
 
 
@@ -235,3 +233,45 @@ def type_parser(var):
     if isinstance(var, type):
         return str(var)[8:-2].replace('__main__.', '')
     return str(type(var))[8:-2].replace('__main__.', '')
+
+
+
+def parse_logic_string(logic_str):
+    """ Parses a logic string into equations and logic operators."""
+
+    # Subsitute commas for "and" statements. (Backwards compatibility)
+    logic_str = '(' + logic_str + ')'
+    logic_str = logic_str.replace(', ', ') and (')
+    logic_str = logic_str.replace(',', ') and (')
+
+    # Loop over logic string, marking the positions of logical operators.
+    i = 0
+    logic_pos = []
+    while i < len(logic_str):
+        if logic_str[i] in ['(', ')']:
+            logic_pos.append(i)
+        elif logic_str[i - 1:i + 4] in [' and ', ' not ']:
+            for k in range(5):
+                logic_pos.append(i - 1 + k)
+        elif logic_str[i - 1:i + 3] == ' or ':
+            for k in range(4):
+                logic_pos.append(i - 1 + k)
+        i += 1
+
+    # Build a dictionary of equations between logical operators.
+    i = 0
+    logic_counter = 0
+    logic_dict = {}
+    prev_pos = 0
+    for pos in logic_pos:
+        if pos - prev_pos > 1:
+            logic_dict[str(logic_counter)] = logic_str[prev_pos + 1:pos]
+            logic_counter += 1
+
+        prev_pos = pos
+
+    # Substitute equations for dictionary values.
+    for key, value in logic_dict.items():
+        logic_str = logic_str.replace(value, '{' + key + '}')
+
+    return logic_str, logic_dict
