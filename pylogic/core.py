@@ -158,7 +158,6 @@ class Logic:
             key = '{' + key + '}'
             validity_str = validity_str.replace(key, str(equation['validity']))
 
-        print(validity_str)
         try:
             return eval(validity_str) #pylint: disable=eval-used
         except NameError:
